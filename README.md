@@ -18,5 +18,7 @@ To run this Flutter app in VS Code:
 6. Click 'Run > Start Debugging' to launch the app.
 
 Demo login:
+
 email: test6@test.com
+
 password: testsix
