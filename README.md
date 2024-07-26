@@ -1,5 +1,7 @@
 # ArtPortfolioApp
+App Name: Artfolio
 
+Group Name: Epic_sawce
 
 
 
