@@ -18,34 +18,43 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
       String email = _emailController.text.trim();
       String password = _passwordController.text.trim();
 
-      if (isLogin) {
-        // Perform login
-        var result = await _auth.signIn(email, password);
-        if (result != null) {
-          // Navigate to home screen
-          print("Logged in successfully");
-          Navigator.pushReplacementNamed(context, '/home');
+      try {
+        if (isLogin) {
+          // Perform login
+          var result = await _auth.signIn(email, password);
+          if (result != null) {
+            await _auth.refreshUserData(); // Add this line
+            bool hasCompletedProfile = await _auth.hasUserCompletedProfile();
+            if (hasCompletedProfile) {
+              Navigator.pushReplacementNamed(context, '/main');
+            } else {
+              Navigator.pushReplacementNamed(context, '/profile_setup');
+            }
+          } else {
+            // Show error message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Failed to log in. Please try again.')),
+            );
+          }
         } else {
-          // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Failed to log in. Please try again.')),
-          );
+          // Perform sign up
+          var result = await _auth.signUp(email, password);
+          if (result != null) {
+            Navigator.pushReplacementNamed(context, '/profile_setup');
+          } else {
+            // Show error message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Failed to sign up. Please try again.')),
+            );
+          }
         }
-      } else {
-        // Perform sign up
-        var result = await _auth.signUp(email, password);
-        if (result != null) {
-          // Navigate to home screen
-          print("Signed up successfully");
-          Navigator.pushReplacementNamed(context, '/home');
-        } else {
-          // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Failed to sign up. Please try again.')),
-          );
-        }
+      } catch (e) {
+        print("Error during authentication: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An error occurred: $e')),
+        );
       }
     }
   }

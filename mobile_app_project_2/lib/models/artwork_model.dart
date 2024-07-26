@@ -8,6 +8,7 @@ class ArtworkModel {
   final String imageUrl;
   final List<String> likes;
   final DateTime createdAt;
+  final String titleLowercase;
 
   ArtworkModel({
     required this.id,
@@ -17,6 +18,7 @@ class ArtworkModel {
     required this.imageUrl,
     this.likes = const [],
     required this.createdAt,
+    required this.titleLowercase,
   });
 
   Map<String, dynamic> toMap() {
@@ -28,6 +30,7 @@ class ArtworkModel {
       'imageUrl': imageUrl,
       'likes': likes,
       'createdAt': createdAt,
+      'title_lowercase': titleLowercase,
     };
   }
 
@@ -38,6 +41,7 @@ class ArtworkModel {
       artistId: data['artistId'] ?? '',
       title: data['title'] ?? '',
       description: data['description'] ?? '',
+      titleLowercase: data['titleLowercase'] ?? '',
       imageUrl: data['imageUrl'] ?? '',
       likes: List<String>.from(data['likes'] ?? []),
       createdAt: (data['createdAt'] as Timestamp).toDate(),

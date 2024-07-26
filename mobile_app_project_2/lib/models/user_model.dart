@@ -8,16 +8,39 @@ class UserModel {
   final String profileImageUrl;
   final List<String> followers;
   final List<String> following;
+  final String nameLowercase;
 
-  UserModel({
-    required this.id,
-    required this.name,
-    required this.email,
-    this.bio = '',
-    this.profileImageUrl = '',
-    this.followers = const [],
-    this.following = const [],
-  });
+  UserModel(
+      {required this.id,
+      required this.name,
+      required this.email,
+      this.bio = '',
+      this.profileImageUrl = '',
+      this.followers = const [],
+      this.following = const [],
+      required this.nameLowercase});
+
+  UserModel copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? bio,
+    String? profileImageUrl,
+    List<String>? followers,
+    List<String>? following,
+    String? nameLowercase,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      bio: bio ?? this.bio,
+      nameLowercase: nameLowercase ?? this.nameLowercase,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      followers: followers ?? this.followers,
+      following: following ?? this.following,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -28,6 +51,7 @@ class UserModel {
       'profileImageUrl': profileImageUrl,
       'followers': followers,
       'following': following,
+      'name_lowercase': nameLowercase,
     };
   }
 
@@ -39,6 +63,7 @@ class UserModel {
       email: data['email'] ?? '',
       bio: data['bio'] ?? '',
       profileImageUrl: data['profileImageUrl'] ?? '',
+      nameLowercase: data['name_lowercase'] ?? '',
       followers: List<String>.from(data['followers'] ?? []),
       following: List<String>.from(data['following'] ?? []),
     );

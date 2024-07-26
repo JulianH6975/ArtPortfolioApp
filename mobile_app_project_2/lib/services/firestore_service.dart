@@ -7,7 +7,10 @@ class FirestoreService {
 
   // User operations
   Future<void> createUser(UserModel user) async {
-    await _firestore.collection('users').doc(user.id).set(user.toMap());
+    await _firestore.collection('users').doc(user.id).set({
+      ...user.toMap(),
+      'name_lowercase': user.name.toLowerCase(),
+    });
   }
 
   Future<UserModel?> getUser(String userId) async {
@@ -19,9 +22,20 @@ class FirestoreService {
     await _firestore.collection('users').doc(user.id).update(user.toMap());
   }
 
+  Stream<UserModel?> getUserStream(String userId) {
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .snapshots()
+        .map((doc) => doc.exists ? UserModel.fromDocument(doc) : null);
+  }
+
   // Artwork operations
   Future<String> createArtwork(ArtworkModel artwork) async {
-    final docRef = await _firestore.collection('artworks').add(artwork.toMap());
+    final docRef = await _firestore.collection('artworks').add({
+      ...artwork.toMap(),
+      'title_lowercase': artwork.title.toLowerCase(),
+    });
     return docRef.id;
   }
 
@@ -52,15 +66,95 @@ class FirestoreService {
             .toList());
   }
 
-  // Get artworks for a specific user
   Stream<List<ArtworkModel>> getUserArtworksStream(String userId) {
+    print(
+        "Fetching artworks for user: $userId"); // This line is already present
     return _firestore
         .collection('artworks')
         .where('artistId', isEqualTo: userId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ArtworkModel.fromDocument(doc))
-            .toList());
+        .map((snapshot) {
+      print(
+          "Snapshot size: ${snapshot.docs.length}"); // This line is already present
+      if (snapshot.docs.isEmpty) {
+        print("No artworks found for user $userId");
+      } else {
+        print(
+            "Artworks found: ${snapshot.docs.map((doc) => doc.id).join(', ')}");
+      }
+      return snapshot.docs
+          .map((doc) => ArtworkModel.fromDocument(doc))
+          .toList();
+    });
+  }
+
+  Future<List<UserModel>> getFeaturedArtists({int limit = 5}) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('users')
+          .orderBy('followers', descending: true)
+          .limit(limit)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => UserModel.fromDocument(doc))
+          .toList();
+    } catch (e) {
+      print('Error getting featured artists: $e');
+      return [];
+    }
+  }
+
+  Future<List<ArtworkModel>> getFeaturedArtworks({int limit = 5}) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('artworks')
+          .orderBy('likes', descending: true)
+          .limit(limit)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => ArtworkModel.fromDocument(doc))
+          .toList();
+    } catch (e) {
+      print('Error getting featured artworks: $e');
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> search(String query,
+      {DocumentSnapshot? startAfter, int limit = 10}) async {
+    query = query.toLowerCase();
+    List<dynamic> results = [];
+
+    // Search for users
+    Query userQuery = _firestore
+        .collection('users')
+        .where('name_lowercase', isGreaterThanOrEqualTo: query)
+        .where('name_lowercase', isLessThan: query + 'z')
+        .limit(limit);
+
+    // Search for artworks
+    Query artworkQuery = _firestore
+        .collection('artworks')
+        .where('title_lowercase', isGreaterThanOrEqualTo: query)
+        .where('title_lowercase', isLessThan: query + 'z')
+        .limit(limit);
+
+    if (startAfter != null) {
+      userQuery = userQuery.startAfterDocument(startAfter);
+      artworkQuery = artworkQuery.startAfterDocument(startAfter);
+    }
+
+    final userSnapshots = await userQuery.get();
+    final artworkSnapshots = await artworkQuery.get();
+
+    results
+        .addAll(userSnapshots.docs.map((doc) => UserModel.fromDocument(doc)));
+    results.addAll(
+        artworkSnapshots.docs.map((doc) => ArtworkModel.fromDocument(doc)));
+
+    return results;
   }
 }
